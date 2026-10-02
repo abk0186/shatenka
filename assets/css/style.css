@@ -21,7 +21,7 @@
   --serif: "Cormorant Garamond", "Playfair Display", Georgia, "Times New Roman", serif;
   --sans: "Montserrat", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --header-h: 60px;
-  --nav-h: 42px;
+  --nav-h: 44px;
   --ease: cubic-bezier(.22, .61, .36, 1);
 }
 
@@ -46,7 +46,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 button { font: inherit; }
 :focus-visible { outline: 2px solid var(--rose-deep); outline-offset: 3px; border-radius: 6px; }
 
-.container { width: 100%; max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+.container { width: 100%; max-width: 1180px; margin: 0 auto; padding: 0 max(20px, env(safe-area-inset-right)) 0 max(20px, env(safe-area-inset-left)); } /* safe-area: viewport-fit=cover + iPhone landscape notch */
 .narrow { max-width: 760px; }
 .center { text-align: center; }
 .nowrap { white-space: nowrap; }
@@ -71,7 +71,7 @@ svg.icon, .card-icon svg, .ci-icon svg, .reel-icon, .fab svg {
 }
 .site-header.is-scrolled { border-bottom-color: var(--line); box-shadow: 0 6px 20px -16px rgba(51, 34, 27, .4); }
 .header-inner { height: var(--header-h); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
+.logo { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; text-decoration: none; }
 .logo-mark {
   width: 34px; height: 34px; border-radius: 50%;
   display: grid; place-items: center;
@@ -84,15 +84,15 @@ svg.icon, .card-icon svg, .ci-icon svg, .reel-icon, .fab svg {
 .nav-inner {
   height: var(--nav-h); display: flex; align-items: center; gap: 6px;
   overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
-  mask-image: linear-gradient(90deg, #000 88%, transparent); -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent); -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent); /* fade only the edge, not the last link when it fits */
 }
 .nav-inner::-webkit-scrollbar { display: none; }
-.nav a { flex: none; padding: 6px 12px; border-radius: 999px; font-size: 13px; text-decoration: none; color: var(--text); white-space: nowrap; transition: background .25s, color .25s; }
+.nav a { flex: none; display: inline-flex; align-items: center; min-height: 40px; padding: 0 12px; border-radius: 999px; font-size: 13px; text-decoration: none; color: var(--text); white-space: nowrap; transition: background .25s, color .25s; }
 .nav a:hover { background: var(--sand); color: var(--brown-dark); }
 
 .lang-switch { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--ivory); border: 1px solid var(--line); }
 .lang-switch button {
-  min-width: 40px; height: 32px; padding: 0 10px; border: 0; border-radius: 999px;
+  min-width: 42px; height: 40px; padding: 0 10px; border: 0; border-radius: 999px;
   background: transparent; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .08em; cursor: pointer;
   transition: background .25s var(--ease), color .25s var(--ease);
 }
@@ -349,7 +349,7 @@ svg.icon, .card-icon svg, .ci-icon svg, .reel-icon, .fab svg {
 
 /* Floating WhatsApp */
 .fab {
-  position: fixed; right: 18px; bottom: calc(18px + env(safe-area-inset-bottom)); z-index: 40;
+  position: fixed; right: calc(18px + env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom)); z-index: 40;
   width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center;
   color: var(--ivory); background: linear-gradient(135deg, var(--rose-deep), var(--brown));
   box-shadow: 0 12px 26px -8px rgba(51, 34, 27, .5);
@@ -394,12 +394,16 @@ svg.icon, .card-icon svg, .ci-icon svg, .reel-icon, .fab svg {
 /* ≥ 900px */
 @media (min-width: 900px) {
   :root { --header-h: 72px; }
-  .container { padding: 0 32px; }
+  .container { padding: 0 max(32px, env(safe-area-inset-right)) 0 max(32px, env(safe-area-inset-left)); }
   :root { --nav-h: 0px; }
   .site-header { position: sticky; }
-  .nav { position: absolute; top: 0; left: 50%; transform: translateX(-50%); border: 0; }
-  .nav-inner { height: var(--header-h); width: auto; padding: 0; gap: 4px; overflow: visible; mask-image: none; -webkit-mask-image: none; }
-  .nav a { font-size: 14px; padding: 8px 12px; }
+  /* nav sits between logo and language switch: the side padding reserves their space so long (KZ/RU) menus never run under them */
+  .nav { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 1180px; padding: 0 170px; border: 0; pointer-events: none; }
+  .nav-inner { pointer-events: auto; height: var(--header-h); width: auto; max-width: none; padding: 0; gap: 4px; overflow-x: auto; mask-image: none; -webkit-mask-image: none; }
+  .nav a { font-size: 14px; padding: 0 12px; }
+  .nav a:first-child { margin-left: auto; } .nav a:last-child { margin-right: auto; } /* centred, but scrollable instead of clipped if it ever overflows */
+  .hero-photo-wrap { max-width: min(440px, calc((100vh - var(--header-h) - 40px) * 5 / 7)); }
+  @supports (height: 100svh) { .hero-photo-wrap { max-width: min(440px, calc((100svh - var(--header-h) - 40px) * 5 / 7)); } }
   .hero { padding: 64px 0 96px; }
   .hero-inner { grid-template-columns: 1.1fr .9fr; align-items: center; gap: 64px; }
   .hero-lead { font-size: 19px; }
@@ -429,6 +433,50 @@ svg.icon, .card-icon svg, .ci-icon svg, .reel-icon, .fab svg {
   .step { padding: 28px 24px; }
   .step-num { position: static; margin-bottom: 18px; }
   .fab { display: none; }
+}
+
+/* 900–1199px (Galaxy A / Pro Max / Flip landscape, small laptops): tighter menu, 3+2 process cards */
+@media (min-width: 900px) and (max-width: 1199.98px) {
+  .nav-inner { gap: 2px; }
+  .nav a { font-size: 13px; padding: 0 9px; }
+  .steps { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .step { grid-column: span 2; }
+  .step:nth-child(4) { grid-column: 2 / span 2; }
+  .step:nth-child(5) { grid-column: 4 / span 2; }
+}
+
+/* Phones in landscape (short viewport) */
+@media (orientation: landscape) and (max-height: 500px) {
+  :root { --header-h: 56px; }
+  .hero { padding: 24px 0 48px; }
+  .hero-inner { align-items: start; }
+  .fab { width: 48px; height: 48px; right: calc(14px + env(safe-area-inset-right)); bottom: calc(14px + env(safe-area-inset-bottom)); }
+  .fab svg { width: 23px; height: 23px; }
+}
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 899.98px) {
+  :root { --nav-h: 0px; }
+  /* one-row header: logo · scrollable menu · KZ/RU/EN (was two rows = ~30% of the screen) */
+  .site-header { display: flex; align-items: center; gap: 8px; height: var(--header-h); padding: 0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left)); }
+  .header-inner { display: contents; }
+  .logo { order: 1; flex: none; }
+  .logo-mark { width: 32px; height: 32px; font-size: 20px; }
+  .logo-text { font-size: 20px; }
+  .nav { order: 2; flex: 1 1 auto; min-width: 0; border-top: 0; }
+  .nav-inner { height: var(--header-h); max-width: none; padding: 0 6px; gap: 2px;
+    mask-image: linear-gradient(90deg, transparent, #000 10px, #000 calc(100% - 28px), transparent); -webkit-mask-image: linear-gradient(90deg, transparent, #000 10px, #000 calc(100% - 28px), transparent); }
+  .nav a { padding: 0 9px; }
+  .nav a:first-child { margin-left: auto; } .nav a:last-child { margin-right: auto; }
+  .lang-switch { order: 3; flex: none; }
+}
+/* Landscape phones / unfolded Fold (640–899px wide): text + whole photo side by side, photo fits the screen height */
+@media (orientation: landscape) and (min-width: 640px) and (max-width: 899.98px) {
+  .hero { padding: 24px 0 48px; }
+  .hero-inner { grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 28px; }
+  .hero-title { font-size: clamp(40px, 7.4vw, 60px); }
+  .hero-lead { font-size: 16px; }
+  .hero-actions { flex-direction: row; flex-wrap: wrap; margin-top: 22px; }
+  .hero-photo-wrap { margin: 0; width: min(38vw, calc((100vh - var(--header-h) - var(--nav-h) - 48px) * 5 / 7)); }
+  @supports (height: 100svh) { .hero-photo-wrap { width: min(38vw, calc((100svh - var(--header-h) - var(--nav-h) - 48px) * 5 / 7)); } }
 }
 
 @media (min-width: 1100px) {
