@@ -2,7 +2,10 @@
 (function () {
   'use strict';
 
-  var STORAGE_KEY = 'shatenka-lang';
+  // Only a MANUAL choice (click on KZ/RU/EN) is stored. New key: values saved under the
+  // old key 'shatenka-lang' are ignored (and removed) so detection reruns for those visitors.
+  var STORAGE_KEY = 'shatenka-lang-manual';
+  var LEGACY_KEYS = ['shatenka-lang'];
   var LANGS = ['kk', 'ru', 'en'];
   var WA_NUMBER = '77024092889';
 
@@ -356,14 +359,44 @@
   function storageSet(v) {
     try { localStorage.setItem(STORAGE_KEY, v); } catch (e) { /* private mode */ }
   }
+  try { for (var lk = 0; lk < LEGACY_KEYS.length; lk++) localStorage.removeItem(LEGACY_KEYS[lk]); } catch (e) {}
 
+  function urlLang() {
+    try {
+      var p = new URLSearchParams(location.search).get('lang');
+      p = p && p.toLowerCase();
+      if (p === 'kz') p = 'kk';
+      return LANGS.indexOf(p) !== -1 ? p : null;
+    } catch (e) { return null; }
+  }
+
+  // Map browser languages to kk / ru / en. First entry that matches a known group wins;
+  // if the browser reports languages but none match, the visitor is international -> en.
+  var RU_GROUP = ['ru', 'uk', 'be', 'uz', 'ky', 'tg', 'az', 'hy'];
+  function browserLang() {
+    var list = [];
+    try {
+      if (navigator.languages && navigator.languages.length) list = Array.prototype.slice.call(navigator.languages);
+      else if (navigator.language) list = [navigator.language];
+    } catch (e) {}
+    list = list.filter(function (t) { return typeof t === 'string' && t.trim(); });
+    if (!list.length) return null;
+    for (var i = 0; i < list.length; i++) {
+      var primary = list[i].trim().toLowerCase().split(/[-_]/)[0];
+      if (primary === 'kk' || primary === 'kz') return 'kk';
+      if (RU_GROUP.indexOf(primary) !== -1) return 'ru';
+      if (primary === 'en') return 'en';
+    }
+    return 'en';
+  }
+
+  // Priority: 1) ?lang=  2) saved manual choice  3) browser languages  4) kk
   function initialLang() {
-    var param = null;
-    try { param = new URLSearchParams(location.search).get('lang'); } catch (e) {}
-    if (param && LANGS.indexOf(param) !== -1) return param;
+    var fromUrl = urlLang();
+    if (fromUrl) return fromUrl;
     var saved = storageGet();
     if (saved && LANGS.indexOf(saved) !== -1) return saved;
-    return 'kk';
+    return browserLang() || 'kk';
   }
 
   function setMeta(selector, value) {
@@ -425,7 +458,16 @@
     switcher.addEventListener('click', function (e) {
       var btn = e.target.closest('button[data-lang]');
       if (!btn) return;
-      applyLang(btn.getAttribute('data-lang'), true);
+      var chosen = btn.getAttribute('data-lang');
+      applyLang(chosen, true);
+      // keep an explicit ?lang= in the address bar in sync with the manual choice
+      try {
+        if (urlLang() && window.history && history.replaceState) {
+          var u = new URL(location.href);
+          u.searchParams.set('lang', chosen);
+          history.replaceState(null, '', u.toString());
+        }
+      } catch (err) {}
     });
   }
   applyLang(initialLang(), false);
